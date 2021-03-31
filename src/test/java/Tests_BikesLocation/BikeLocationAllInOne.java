@@ -27,19 +27,20 @@ public class BikeLocationAllInOne {
 
             //This will print the response
             String responsebody = response.getBody().asString();
-            System.out.println("Response Body is:" + responsebody);
+          //  System.out.println("Response Body is:" + responsebody);
             JsonPath jsonPath = response.jsonPath();
-            System.out.println ("City: "+ (jsonPath.get("city")));
-            System.out.println ("country: "+ (jsonPath.get("country")));
-            System.out.println ("latitude: "+ (jsonPath.get("latitude")));
-            System.out.println ("longitude: "+ (jsonPath.get("longitude")));
+            jsonPath.param("id","visa-frankfurt");
+            jsonPath.param("href","/v2/networks/visa-frankfurt");
+            jsonPath.param("name","VISA");
+/*            System.out.println ("City: "+ (jsonPath.param(".location.city","Frankfurt")));
+            System.out.println ("country: "+ (jsonPath.param(".location.country", "Germany")));
+            System.out.println ("latitude: "+ (jsonPath.param(".location.latitude","50.1072")));
+            System.out.println ("longitude: "+ (jsonPath.param(".location.longitude","8.66375")));*/
 
-            assertTrue(responsebody.contains("frankfurt"));
-
-           Assert.assertEquals((jsonPath.get("city")),"Frankfurt");
-           Assert.assertEquals((jsonPath.get("country")),"Germany");
-           Assert.assertEquals((jsonPath.get("latitude")),"50.1072");
-           Assert.assertEquals((jsonPath.get("longitude")),"8.66375");
+           Assert.assertEquals((jsonPath.get(".location.city")),"Frankfurt");
+           Assert.assertEquals((jsonPath.get(".location.country")),"Germany");
+           Assert.assertEquals((jsonPath.get(".location.latitude")),"50.1072");
+           Assert.assertEquals((jsonPath.get(".location.longitude")),"8.66375");
         }
 
 }
