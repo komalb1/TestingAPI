@@ -1,0 +1,551 @@
+package uk.gov.ipt.asup.common.util;
+
+import lombok.extern.slf4j.Slf4j;
+import org.openqa.selenium.*;
+import org.openqa.selenium.interactions.Actions;
+import org.openqa.selenium.support.PageFactory;
+import org.openqa.selenium.support.ui.*;
+import org.openqa.selenium.interactions.Actions;
+import org.openqa.selenium.support.PageFactory;
+import org.openqa.selenium.support.ui.*;
+
+import uk.gov.ipt.asup.StepsBase;
+import uk.gov.ipt.asup.TestException;
+import uk.gov.ipt.asup.common.page.CommonPage;
+
+import java.io.File;
+
+import uk.gov.ipt.asup.StepsBase;
+import uk.gov.ipt.asup.common.page.CommonPage;
+
+import java.io.File;
+
+import uk.gov.ipt.asup.StepsBase;
+import uk.gov.ipt.asup.common.page.CommonPage;
+
+import java.io.File;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Predicate;
+
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.awaitility.Awaitility.await;
+
+@Slf4j
+public class PageUtils {
+
+    public static void selectLabel(List<WebElement> labels, String labelToSelect) {
+        for (WebElement label : labels) {
+            if (label.getText().contains(labelToSelect)) {
+                try {
+                    PageUtils.hardWait(2);
+                    label.click();
+                } catch (Exception e) {
+                    PageUtils.hardWait(10);
+                    label.click();
+                }
+                //                Log.get(PageUtils.class).info("Selected Label : " + label.getText());
+                break;
+            }
+        }
+    }
+
+    public static WebElement getSelectedLabel(List<WebElement> labels) {
+        for (WebElement label : labels) {
+            if (label.getAttribute("class").contains("selected")) {
+                return label;
+            }
+        }
+        return null;
+    }
+
+    public static List<WebElement> getSelectedLabels(List<WebElement> labels) {
+        List<WebElement> selectedLabels = new ArrayList<>();
+        for (WebElement label : labels) {
+            if (label.getAttribute("class").contains("selected")) {
+                selectedLabels.add(label);
+            }
+        }
+        return selectedLabels;
+    }
+
+    public static String getSelectedLabelText(List<WebElement> labels) {
+
+        return getSelectedLabel(labels).getText();
+    }
+
+    public static void selectDropdownByVisibleText(WebElement dropdownWebelement, String visibleText) {
+        Select dropdown = new Select(dropdownWebelement);
+        dropdown.selectByVisibleText(visibleText);
+    }
+
+    public static String getSelectedDropDown(WebElement dropdownWebelement) {
+        Select dropdown = new Select(dropdownWebelement);
+        return dropdown.getFirstSelectedOption().getText();
+    }
+
+    public static void selectCheckboxes(List<WebElement> checkBoxes, List<String> selections) {
+        for (String selection : selections) {
+            PageUtils.selectLabel(checkBoxes, selection);
+        }
+    }
+
+
+    public static List<String> getSelectedLabelsText(List<WebElement> labels) {
+        List<WebElement> selectedLabels = getSelectedLabels(labels);
+        List<String> labelsAsString = new ArrayList<>();
+        for (WebElement selectedLabel : selectedLabels) {
+            labelsAsString.add(selectedLabel.getText());
+        }
+        return labelsAsString;
+    }
+
+
+
+    /**
+     * This method checks for an element to be displayed and waits, then retries a
+     * specified number of times if not displayed
+     *
+     * @param element
+     * @param retries
+     * @author reg williams
+     */
+    public static boolean waitForElementToDisplay(WebElement element, int retries) {
+        boolean isDisplayed = false;
+        int x = 0;
+        if (retries < 1) {
+            retries = 5;
+        }
+        while (x < retries) {
+            try {
+                Thread.sleep(1000);
+                if (element.isDisplayed() == true) {
+                    x = x + retries;
+                    isDisplayed = true;
+                } else {
+                }
+            } catch (Exception e) {
+                e.getMessage();
+                System.out.println("Attempt No:- " + x + ". Element Not Displayed. Retrying...");
+            }
+            x++;
+        }
+        return isDisplayed;
+    }
+
+    public static void waitForElements(WebDriver webdriver) {
+        FluentWait<WebDriver> wait = new FluentWait<>(webdriver)
+                .withTimeout(Duration.ofSeconds(PropertyUtils.getScreenInteractionMaxWaitInSecs()))
+                .pollingEvery(Duration.ofSeconds(PropertyUtils.getScreenInteractionRetryIntervalInSecs()))
+                .ignoring(Exception.class);
+        wait.until((WebDriver webDriver) -> {
+            CommonPage commonPage = PageFactory.initElements(webdriver, CommonPage.class);
+            return commonPage.getLogo().isDisplayed();
+        });
+    }
+
+    public static void disableOverlays(WebDriver webdriver) {
+        JavascriptExecutor javascriptExecutor = (JavascriptExecutor) webdriver;
+        javascriptExecutor.executeScript(
+                "(ipt = ipt || {}).annotationDisable = true; ipt.Annotations && ipt.Annotations.disable();");
+    }
+
+    public static WebElement waitForElementToDisplay(WebDriver webdriver, By id) {
+
+        FluentWait<WebDriver> wait = new FluentWait<>(webdriver)
+                .withTimeout(Duration.ofSeconds(PropertyUtils.getScreenInteractionMaxWaitInSecs()))
+                .pollingEvery(Duration.ofSeconds(PropertyUtils.getScreenInteractionRetryIntervalInSecs()))
+                .ignoring(NoSuchElementException.class);
+        Log.get(PageUtils.class).info("Waiting for element {}, max wait time: {}, retry time {}", id,
+                PropertyUtils.getScreenInteractionMaxWaitInSecs(),
+                PropertyUtils.getScreenInteractionRetryIntervalInSecs());
+        wait.until((WebDriver webDriver) -> {
+            try {
+                return webdriver.findElement(id).isDisplayed();
+            } catch (Exception e) {
+                Log.get(PageUtils.class).info("Element not displayed yet {}", id);
+                return false;
+            }
+        });
+        return webdriver.findElement(id);
+    }
+
+    public static void waitForElementToVisible(WebDriver webdriver, By xpath) {
+        try {
+
+            FluentWait<WebDriver> wait = new FluentWait<>(webdriver)
+                    .withTimeout(Duration.ofSeconds(PropertyUtils.getScreenInteractionMaxWaitInSecs()))
+                    .pollingEvery(Duration.ofSeconds(PropertyUtils.getScreenInteractionRetryIntervalInSecs()))
+                    .ignoring(Exception.class).ignoring(ElementNotVisibleException.class);
+            wait.until(ExpectedConditions.visibilityOf(webdriver.findElement(xpath)));
+
+        } catch (Exception e) {
+            Log.get(PageUtils.class).info("Element not displayed yet {}", xpath);
+
+        }
+
+    }
+
+    public static boolean acceptConfirmation(WebDriver driver) {
+        try {
+            Log.get(PageUtils.class).info("Accepting confirmation popup");
+            JavascriptExecutor javascriptExecutor = (JavascriptExecutor) driver;
+            javascriptExecutor.executeScript("window.confirm = function(){return true;}");
+            return true;
+        } catch (Exception e) {
+            log.warn("Failed to accept confirmation");
+            return false;
+        }
+    }
+
+    public static void waitUntilPageLoadByTitle(WebDriver driver) {
+        await("***Page is not loaded within 60 seconds***").atMost(60, SECONDS).pollInterval(1, SECONDS).ignoreExceptions()
+                .until(() -> driver.findElement(By.cssSelector("h1 strong")).isDisplayed());
+    }
+
+    public static void waitUntilPageLoadByTitle2(WebDriver driver) {
+        await("***Page is not loaded within 60 seconds***").atMost(60, SECONDS).pollInterval(1, SECONDS).ignoreExceptions()
+                .until(() -> driver.findElement(By.cssSelector("h3.home-office-purple.page-heading strong")).isDisplayed());
+    }
+
+    public static void acceptNotConfirmation(WebDriver driver) {
+        JavascriptExecutor javascriptExecutor = (JavascriptExecutor) driver;
+        javascriptExecutor.executeScript("window.confirm = function(){return true;}");
+    }
+
+    public static String getResultString(String s, int n) {
+        String result = s.substring(0, Math.min(s.length(), n));
+        return result;
+    }
+
+    public static void hardWait() {
+        long startTimeInSeconds = TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis());
+        Log.get(PageUtils.class).debug("PageUtils:: Hard Wait Started: ");
+        long endTimeInSeconds = 0l;
+        long duration = 0l;
+        while (duration < 5) {
+            duration = (endTimeInSeconds - startTimeInSeconds);
+            endTimeInSeconds = TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis());
+        }
+    }
+
+    public static void hardWait(long delayTime) {
+        long startTimeInSeconds = TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis());
+        Log.get(PageUtils.class).debug("Hard Wait of " + delayTime + " seconds.");
+        long endTimeInSeconds = 0l;
+        long duration = 0l;
+        while (duration < delayTime) {
+            duration = (endTimeInSeconds - startTimeInSeconds);
+            endTimeInSeconds = TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis());
+        }
+    }
+
+    //default 10 sec timeout
+    public static boolean waitForPageLoadJavascriptJquery(WebDriver driver) {
+        try {
+            driver.manage().timeouts().pageLoadTimeout(10, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            //e.printStackTrace();
+            log.error("Page Load Timeout after " + 10 + " seconds");
+            return false;
+        }
+
+        WebDriverWait wait = new WebDriverWait(driver, 30);
+
+        // wait for jQuery to load
+        ExpectedCondition<Boolean> jQueryLoad = new ExpectedCondition<Boolean>() {
+            @Override
+            public Boolean apply(WebDriver driver) {
+                try {
+                    return ((Long) ((JavascriptExecutor) driver).executeScript("return jQuery.active") == 0);
+                } catch (Exception e) {
+                    // no jQuery present
+                    return true;
+                }
+            }
+        };
+
+        // wait for Javascript to load
+        ExpectedCondition<Boolean> jsLoad = new ExpectedCondition<Boolean>() {
+            @Override
+            public Boolean apply(WebDriver driver) {
+                return ((JavascriptExecutor) driver).executeScript("return document.readyState").toString()
+                        .equals("complete");
+            }
+        };
+
+        if (wait.until(jQueryLoad) && wait.until(jsLoad)) {
+            return true;
+        } else {
+            log.info("Waiting for Javascript or Jquery to complete Timeout after " + 30 + " seconds");
+            return false;
+        }
+    }
+
+    //Parametrized timeOutInSeconds
+    public static boolean waitForPageLoadJavascriptJquery(WebDriver driver, int timeOutInSeconds) {
+        try {
+            driver.manage().timeouts().pageLoadTimeout(timeOutInSeconds, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            //e.printStackTrace();
+            log.error("Page Load Timeout after " + timeOutInSeconds + " seconds");
+            return false;
+        }
+
+        WebDriverWait wait = new WebDriverWait(driver, timeOutInSeconds);
+
+        // wait for jQuery to load
+        ExpectedCondition<Boolean> jQueryLoad = new ExpectedCondition<Boolean>() {
+            @Override
+            public Boolean apply(WebDriver driver) {
+                try {
+                    return ((Long) ((JavascriptExecutor) driver).executeScript("return jQuery.active") == 0);
+                } catch (Exception e) {
+                    // no jQuery present
+                    return true;
+                }
+            }
+        };
+
+        // wait for Javascript to load
+        ExpectedCondition<Boolean> jsLoad = new ExpectedCondition<Boolean>() {
+            @Override
+            public Boolean apply(WebDriver driver) {
+                return ((JavascriptExecutor) driver).executeScript("return document.readyState").toString()
+                        .equals("complete");
+            }
+        };
+
+        if (wait.until(jQueryLoad) && wait.until(jsLoad)) {
+            return true;
+        } else {
+            log.info("Waiting for Javascript or Jquery to complete Timeout after " + timeOutInSeconds + " seconds");
+            return false;
+        }
+    }
+
+    public static void dissableOverlays(WebDriver webdriver) {
+        JavascriptExecutor javascriptExecutor = (JavascriptExecutor) webdriver;
+        javascriptExecutor.executeScript(
+                "(ipt = ipt || {}).annotationDisable = true; ipt.Annotations && ipt.Annotations.disable();");
+    }
+
+    public static void scrollTo(WebDriver driver, WebElement element) {
+        ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView();", element);
+    }
+
+    public static void waitUntilElementToEnabled(WebDriver driver, By by) {
+        WebDriverWait wait = new WebDriverWait(driver, 60);
+        wait.until(d -> driver.findElement(by).isEnabled());
+    }
+
+    public static void actionClick(WebDriver driver, By by) {
+        Actions actions = new Actions(driver);
+        actions.moveToElement(driver.findElement(by)).click().perform();
+    }
+
+    public static void waitUntilElementToClickable(WebDriver driver, By by) {
+        WebDriverWait wait = new WebDriverWait(driver, 90);
+        wait.until(d -> ExpectedConditions.visibilityOfElementLocated(by));
+        wait.until(d -> ExpectedConditions.elementToBeClickable(by));
+    }
+
+    public static void clickByJavaScriptExecutor(WebDriver driver, By by) {
+        try {
+            WebElement element = driver.findElement(by);
+            if (element.isEnabled() && element.isDisplayed()) {
+                log.info("Clicking on element with using javascriptexecutor");
+                ((JavascriptExecutor) driver).executeScript("arguments[0].click();", element);
+            } else {
+                log.info("***Unable to click on the element***");
+            }
+        } catch (StaleElementReferenceException ex) {
+            log.info("Element is not attached to the page document :: " + ex.getStackTrace());
+        } catch (NoSuchElementException ex) {
+            log.info("Element was not found in the DOM :: " + ex.getStackTrace());
+        } catch (Exception ex) {
+            log.info("Element is not clickable :: " + ex.getStackTrace());
+            ScreenShot.take(driver, new File("ipt-automation-results/"));
+        }
+    }
+
+    public static void highlightElement(WebDriver driver, WebElement element) {
+        executeScript(driver, "arguments[0].setAttribute('style', 'background: yellow; border: 1px solid red;');", element);
+    }
+
+    public static Object executeScript(WebDriver webdriver, String script, WebElement element) {
+        JavascriptExecutor javascriptExecutor = (JavascriptExecutor) webdriver;
+        return javascriptExecutor.executeScript(script, new Object[]{element});
+    }
+
+    public static void waitForPageLoadByJavascript(WebDriver webdriver){
+        if (!PageUtils.waitForPageLoadJavascriptJquery(webdriver, 60)) {
+            ScreenShot.take(webdriver, new File("ipt-automation-results/"));
+            throw new TestException("waitForPageLoadJavascriptJquery is taking more than 60 sec");
+        }
+    }
+
+    public static void waitForPageLoadByJavascript(WebDriver webdriver, int time){
+        if (!PageUtils.waitForPageLoadJavascriptJquery(webdriver, time)) {
+            ScreenShot.take(webdriver, new File("ipt-automation-results/"));
+            throw new TestException("waitForPageLoadJavascriptJquery is taking more than 60 sec");
+        }
+    }
+
+    public static void waitUntilElementAppearsOnScreen(WebDriver webdriver, By by, int timeout){
+        AtomicInteger count = new AtomicInteger(0);
+        await().atMost(timeout, TimeUnit.MINUTES)
+                .pollInterval(10, TimeUnit.SECONDS)
+                .until(()->{
+                    log.info("Waiting on the page until the element appears::"+ count.incrementAndGet());
+                    return webdriver.findElement(by).isEnabled();
+                });
+    }
+
+    public static String getTextFromHiddenField(WebDriver driver, WebElement element) {
+        return (String) ((JavascriptExecutor) driver).executeScript("return jQuery(arguments[0]).text();", element);
+    }
+
+    public static void filterselectDropdown(WebDriver driver, String locator, String filterValue) {
+        waitUntilElementToEnabled(driver, By.cssSelector("[id^=" + locator + "]" + " div input"));
+        driver.findElement(By.cssSelector("[id^=" + locator + "]" + " div input")).click();
+
+        waitUntilElementToEnabled(driver, By.cssSelector("[id^=" + locator + "]"));
+        driver.findElement(By.cssSelector("[id^=" + locator + "]" + " div input")).sendKeys(Keys.DELETE);
+        driver.findElement(By.cssSelector("[id^=" + locator + "]" + " div input")).sendKeys(filterValue);
+
+        waitUntilElementToEnabled(driver, By.cssSelector("[id^=" + locator + "] ul li"));
+        driver.findElements(By.cssSelector("[id^=" + locator + "]" + " ul li")).stream()
+                .filter(li -> li.getText().equalsIgnoreCase(filterValue))
+                .findFirst()
+                .orElseThrow(() -> new TestException("Filter Value is NOT found in the dropdown::" + filterValue))
+                .click();
+    }
+
+    public static void filterselectDropdown2(WebDriver driver, String locator, String filterValue) {
+        waitUntilElementToEnabled(driver, By.cssSelector(locator + " div input"));
+        driver.findElement(By.cssSelector(locator + " div input")).click();
+
+        waitUntilElementToEnabled(driver, By.cssSelector(locator + " div input"));
+        driver.findElement(By.cssSelector(locator + " div input")).sendKeys(Keys.DELETE);
+        driver.findElement(By.cssSelector(locator + " div input")).sendKeys(filterValue);
+
+        waitUntilElementToEnabled(driver, By.cssSelector(locator + " ul li"));
+        driver.findElements(By.cssSelector(locator + " ul li")).stream()
+                .filter(li -> li.getText().equalsIgnoreCase(filterValue))
+                .findFirst()
+                .orElseThrow(() -> new TestException("Filter Value is NOT found in the dropdown::" + filterValue))
+                .click();
+    }
+
+    public static void filterselectDropdown3(WebDriver driver, String locator, String filterValue) {
+        waitUntilElementToEnabled(driver, By.cssSelector("[id^=" + locator + "]" + " div input"));
+        driver.findElement(By.cssSelector("[id^=" + locator + "]" + " div input")).click();
+
+        waitUntilElementToEnabled(driver, By.cssSelector("[id^=" + locator + "]"));
+        driver.findElement(By.cssSelector("[id^=" + locator + "]" + " div input")).sendKeys(Keys.chord(Keys.CONTROL, "a"));
+        driver.findElement(By.cssSelector("[id^=" + locator + "]" + " div input")).sendKeys(Keys.DELETE);
+        driver.findElement(By.cssSelector("[id^=" + locator + "]" + " div input")).sendKeys(filterValue);
+
+        waitUntilElementToEnabled(driver, By.cssSelector("[id^=" + locator + "] ul li"));
+        driver.findElements(By.cssSelector("[id^=" + locator + "]" + " ul li")).stream()
+                .filter(li -> li.getText().equalsIgnoreCase(filterValue))
+                .findFirst()
+                .orElseThrow(() -> new TestException("Filter Value is NOT found in the dropdown::" + filterValue))
+                .click();
+    }
+
+    public static void selectWorkGroup(WebDriver driver, String locator1, String locator2, String filterValue){
+
+        driver.findElement(By.cssSelector(locator1)).sendKeys(filterValue);
+        waitUntilElementToEnabled(driver, By.cssSelector(locator2 + " li"));
+
+        driver.findElements(By.cssSelector(locator2 + " li")).stream()
+                .filter(li -> li.getText().contains(filterValue))
+                .findFirst()
+                .orElseThrow(() -> new TestException("Filter Value is NOT found in the dropdown::" + filterValue))
+                .click();
+    }
+
+}
+
+
+public String getDocumentID(String visibleText, WebDriver driver) {
+        //hidden name="documentId";
+        WebElement documentIdHiddenElem = driver.findElement(By.cssSelector("input[name='documentId']"));
+        String value = documentIdHiddenElem.getAttribute("value");
+        return value;
+    }
+	public String getDocumentID(String visibleText) {	
+		WebElement documentIdHiddenElem;
+        documentIdHiddenElem = xUtils.formatSingleXpath(selectDocId);
+        String value = documentIdHiddenElem.getAttribute("value");
+        Log.get(getClass()).error("document id is "+value);
+        return value;
+		
+    }
+
+
+WebElement docType = webdriver.findElement(By.cssSelector("#docAttachmentType_1 ul li"));
+
+
+16:18
+String selectDocId = "//input[@name='documentId']";
+
+
+public void selectDrpDwnOpt(WebDriver webdriver, String xpath,String val,String... arg)
+	{
+		for(int i=0;i<arg.length;i++)
+		{
+			if(xpath.contains("{"+i+"}"))
+			{
+				xpath=xpath.replace("{"+i+"}", arg[i]);
+			}
+			
+		}
+		waitForElementVisible(xpath);
+		hardSleep(1000);
+		if(isElementVisible(xpath))
+		{
+			clickElement(xpath);
+			webdriver.findElement(By.xpath(xpath)).sendKeys(val);
+			List<WebElement> elements = webdriver.findElements(By.cssSelector("li.autocomplete__option"));
+			hardSleep(1000);
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			 for (WebElement elem : elements) {
+				 System.out.println(elem.getText());
+		         if (elem.getText().equalsIgnoreCase(val)) {
+		                elem.click();
+		                break;
+		              
+		            }
+			 }
+			
+		}else{
+			Log.get(getClass()).error("Select drop down not display for"+val);
+			fail();
+		}
+	}
+16:41
+getUtils.selectDrpDwnOpt(webdriver,hasDocSentDrpDwn,"Served by Post",String.valueOf(i));
+16:41
+public void fillDetails(){
+		List<WebElement> l=new ArrayList<>();
+		l=xUtils.formatXpath(numbDoc);
+		String day="",month="",year="";
+		
+		String dispatchDt = acUtils.getDate_pluseDay(0);
+		
+		for(int i=1;i<=l.size();i++)
+		{
+16:42
+String numbDoc="//h4[contains(text(),'Document')]";
+16:42
+String hasDocSentDrpDwn="//input[@id='doc-{0}-dispatch-method_id']";
