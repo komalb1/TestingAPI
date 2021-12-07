@@ -1,4 +1,4 @@
-package uk.gov.ipt.asup.common.util;
+
 
 import lombok.extern.slf4j.Slf4j;
 import org.openqa.selenium.*;
@@ -9,19 +9,14 @@ import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.PageFactory;
 import org.openqa.selenium.support.ui.*;
 
-import uk.gov.ipt.asup.StepsBase;
-import uk.gov.ipt.asup.TestException;
-import uk.gov.ipt.asup.common.page.CommonPage;
+
 
 import java.io.File;
 
-import uk.gov.ipt.asup.StepsBase;
-import uk.gov.ipt.asup.common.page.CommonPage;
+
 
 import java.io.File;
 
-import uk.gov.ipt.asup.StepsBase;
-import uk.gov.ipt.asup.common.page.CommonPage;
 
 import java.io.File;
 import java.time.Duration;
@@ -147,11 +142,6 @@ public class PageUtils {
         });
     }
 
-    public static void disableOverlays(WebDriver webdriver) {
-        JavascriptExecutor javascriptExecutor = (JavascriptExecutor) webdriver;
-        javascriptExecutor.executeScript(
-                "(ipt = ipt || {}).annotationDisable = true; ipt.Annotations && ipt.Annotations.disable();");
-    }
 
     public static WebElement waitForElementToDisplay(WebDriver webdriver, By id) {
 
@@ -208,7 +198,7 @@ public class PageUtils {
 
     public static void waitUntilPageLoadByTitle2(WebDriver driver) {
         await("***Page is not loaded within 60 seconds***").atMost(60, SECONDS).pollInterval(1, SECONDS).ignoreExceptions()
-                .until(() -> driver.findElement(By.cssSelector("h3.home-office-purple.page-heading strong")).isDisplayed());
+                .until(() -> driver.findElement(By.cssSelector("h3.")).isDisplayed());
     }
 
     public static void acceptNotConfirmation(WebDriver driver) {
@@ -327,11 +317,6 @@ public class PageUtils {
         }
     }
 
-    public static void dissableOverlays(WebDriver webdriver) {
-        JavascriptExecutor javascriptExecutor = (JavascriptExecutor) webdriver;
-        javascriptExecutor.executeScript(
-                "(ipt = ipt || {}).annotationDisable = true; ipt.Annotations && ipt.Annotations.disable();");
-    }
 
     public static void scrollTo(WebDriver driver, WebElement element) {
         ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView();", element);
@@ -368,7 +353,7 @@ public class PageUtils {
             log.info("Element was not found in the DOM :: " + ex.getStackTrace());
         } catch (Exception ex) {
             log.info("Element is not clickable :: " + ex.getStackTrace());
-            ScreenShot.take(driver, new File("ipt-automation-results/"));
+            ScreenShot.take(driver, new File("test-automation-results/"));
         }
     }
 
@@ -383,14 +368,14 @@ public class PageUtils {
 
     public static void waitForPageLoadByJavascript(WebDriver webdriver){
         if (!PageUtils.waitForPageLoadJavascriptJquery(webdriver, 60)) {
-            ScreenShot.take(webdriver, new File("ipt-automation-results/"));
+            ScreenShot.take(webdriver, new File("test-automation-results/"));
             throw new TestException("waitForPageLoadJavascriptJquery is taking more than 60 sec");
         }
     }
 
     public static void waitForPageLoadByJavascript(WebDriver webdriver, int time){
         if (!PageUtils.waitForPageLoadJavascriptJquery(webdriver, time)) {
-            ScreenShot.take(webdriver, new File("ipt-automation-results/"));
+            ScreenShot.take(webdriver, new File("test-automation-results/"));
             throw new TestException("waitForPageLoadJavascriptJquery is taking more than 60 sec");
         }
     }
